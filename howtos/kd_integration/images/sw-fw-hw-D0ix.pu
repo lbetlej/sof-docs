@@ -1,0 +1,53 @@
+'actor client as c
+
+participant SW_Driver  as drv
+participant HW as hw
+participant FW as fw
+
+activate drv
+activate fw
+
+note over fw
+FW after initialization is in D0i0
+prevent_power_gating == 1
+memory windows are available for access
+end note
+
+note over drv
+driver sends all IPC messages that are needed
+end note
+
+drv -> hw : Set register D0i3.I3=1
+drv -> hw : Wait for  D0i3.CIP==0 (note hw)
+drv -> fw : IPC: PM_STATE_SET(DOiX) \n prevent_power_gating = 0
+drv <-- fw : IPC: response
+	 		fw -> fw : prepare to enter for D0i3
+
+note over fw
+FW opportunistically enters D0i1-3 states
+based on instantiated pipelines IDs 
+(i.e. only when keyphrase detection is activated)
+memory windows are not safe for access
+traces over DMA are suspended by FW
+end note
+...
+
+note over drv
+drv shall not access FW resources while FW is in D0i3
+memory windows are not safe for acess while FW is in D0i3
+IPC communication to enter D0i0 has to go over registers
+end note
+
+
+drv -> hw : Set register D0i3.I3=0
+drv -> hw : Wait for D0i3.CIP==0 (note hw)
+
+drv -> fw : IPC:PM_STATE_SET(DOiX) \n prevent_power_gating = 1
+   	 		fw -> fw : disable entring D0i3
+drv <-- fw : IPC: response
+
+drv -> fw : IPC:PM_SET_STATE(D3)
+   	 		fw -> fw : prepare D3 entry: \npower gate memory banks
+drv <-- fw : IPC: response
+deactivate fw
+	

@@ -1,0 +1,49 @@
+@startuml
+
+scale max 800 height
+
+skinparam rectangle {
+   backgroundColor<<dai>> #6fccdd
+   backgroundColor<<dma>> #f6ed80
+   backgroundColor<<stream>> #d6d6de
+   borderColor<<stream>> #d6d6de
+   borderColor<<ppl>> #a1a1ca
+
+   backgroundColor<<event>> #f05772
+   stereotypeFontColor<<event>> #ffffff
+   fontColor<<event>> #ffffff
+
+   backgroundColor<<cpu>> #f0f0f0
+}
+
+together {
+rectangle "MIC HW" as dmic #DDDDDD
+
+rectangle "Pipe Keyphrase Buffer Manager" as ppl_1 <<ppl>> {
+ rectangle "MIC DAI" as dai_1 <<dai>>
+ rectangle "Keyphrase Buffer Manager" as kpb
+ dai_1 -> kpb : 2ch/16kHz/16bit
+}
+}
+
+rectangle "Pipe Keyphrase Detector" as ppl_2 <<ppl>> {
+ rectangle "Channel selector" as sel
+ rectangle "Keyphrase detection algorithm" as wov
+ sel -> wov : 1ch/16kHz/16bit
+}
+
+
+rectangle "Pipe Speech Capture Stream" as ppl_3 <<ppl>> {
+ rectangle "Host" as host
+ rectangle "Host DMA" as dma
+ host -> dma : 2ch/16kHz/16bit
+}
+ rectangle "Host Memory" as hmem #DDDDDD
+
+dmic -> dai_1
+kpb -> host
+kpb -> sel
+dma -> hmem
+wov ..> kpb : FW notifications
+
+@enduml

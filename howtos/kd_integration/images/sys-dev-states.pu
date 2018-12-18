@@ -1,0 +1,72 @@
+@startuml
+footer: timeline not to scale 
+
+robust "System" as Sys
+Sys has "S0" as high
+Sys has "S0ix" as low
+Sys has "S3" as none
+
+robust "Device" as Dev
+Dev has "D0" as high
+Dev has "D0ix" as low
+Dev has "D3" as none
+
+robust "WOV" as Wov
+Wov has "Active (LPS)" as high
+Wov has "Active" as low
+Wov has "Not Active" as none
+
+Wov is none
+Sys is none
+Dev is none
+
+@0
+Sys is high
+Dev is high
+Wov is low
+
+@1
+Dev is high
+Sys -> Dev : <size:12> Go D0ix (prevent_power_gating=0) \n\n\n
+Dev@1<->@2 : <size:12> FW opts into lower power states 
+
+@2
+Dev is low
+Wov is high
+@3
+
+@4
+Sys is low
+Sys@4<->@4 : System opts into\n lower power states 
+
+@5
+Sys is low
+Dev is low
+
+@6
+Sys is high
+Dev is D0ix
+Wov is high
+
+@7
+Sys -> Dev : <size:12> Exit D0ix \n<size:12>(prevent_power_gating=1) \n\n\n
+Dev is high
+Wov is low
+
+@8
+@11
+Sys -> Dev : Suspend\n
+Dev is none
+Wov is none
+Sys is none
+
+@12
+
+@13
+Sys is high
+Sys -> Dev : Resume\n
+Dev is high
+Sys@11<->@14 : Suspend/Resume
+@14
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+participant Drv as drv
+participant FW as fw
+
+activate fw
+	fw -> drv : IPC: SOF_IPC_GLB_COMP_MSG|SOF_IPC_COMP_EVENT_DATA
+ref over fw 
+
+/* event type */
+enum sof_ipc_ctrl_event_type {
+	SOF_CTRL_EVENT_KPD_NOTIFICATION = 0, /**< keyphrase detector event */
+};
+
+
+struct sof_ipc_comp_event {
+	struct sof_ipc_reply rhdr;
+	uint32_t src_comp_id; /* source component id */
+	int type;	/* event type - SOF_CTRL_EVENT_* */
+	union {
+			/* control data - add new types if needed */
+			struct sof_abi_hdr data[0];
+			uint32_t event_value; /* enum values = SUCCESS, FAIL etc. */
+	};
+} __attribute__((packed));
+end ref  
+activate drv
+	drv --> fw
+deactivate drv
+@enduml

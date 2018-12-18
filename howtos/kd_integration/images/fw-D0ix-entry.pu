@@ -1,0 +1,67 @@
+'actor client as c
+
+participant SW_Driver  as drv
+participant FW as fw
+participant HW as hw
+
+
+activate drv
+drv -> fw : IPC:enter DOiX
+   activate fw
+	 		fw -> fw : prepare to enter for D0i3, check conditions exit with error if not met
+			fw -> fw : Only core #0 may be active, (no streaming assumed)
+			fw -> hw : power gate & WAITI for cores #1..#N  
+			fw -> hw : Set wake source for LPS
+			fw -> hw : adjust LTR
+'			fw -> hw : power gate controller
+			fw -> hw : L1$ writeback
+			fw -> fw : set structures in LP-SRAM (magic word/restore vector)
+drv <-- fw : IPC: response
+			fw -> hw : enter WAITI
+			deactivate fw
+deactivate drv			
+...
+	fw <- hw : wake 
+	activate fw
+	fw <- fw : detemine wake reason
+alt data available
+	fw <- fw : execute keyword detection pipeline
+	alt keyword detected
+	fw <- fw : execute to D0iX -> D0 flow (send notification from D0)
+	else if keyword not detected
+	fw <- fw : execute to D0iX -> D0iX flow 
+	fw -> fw : set structures in LP-SRAM (magic word/restore vector)
+	fw -> hw : enter WAITI
+	end
+else if IPC received
+	fw <- fw : execute to D0iX -> D0 flow
+	fw -> hw: set LTR
+'	fw -> hw : power up controller
+	fw -> fw : restart regular scheduling 
+end	
+
+'drv -> hw : Set register D0i3.I3=1
+'drv -> hw : Wait for  D0i3.CIP==0 (note hw)
+'c -> wq : work_schedule(&work)
+'   activate wq
+
+'   wq -> wq : queue_reschedule()
+'   activate wq
+'      wq -> wq : queue_get_next_timeout() : timeout
+'      wq -> t : work_set_timer(timeout)
+'   deactivate wq
+''c <-- wq
+...
+'drv -> hw : Set register D0i3.I3=0
+'drv -> hw : Wait for D0i3.CIP==0 (note hw)
+'drv -> hw : IPC:enter DO
+'   	 		hw -> hw : prepare to exit D0i3
+'drv <-- hw : IPC: response
+'	deactivate hw
+'	deactivate drv
+'wq <- t : queue_run()
+'   activate wq
+'   loop is_work_pending()
+'      wq -> wq : run_work()
+'   end loop
+'   wq -> wq : queue_reschedule()

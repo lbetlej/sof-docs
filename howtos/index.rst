@@ -25,3 +25,13 @@ Process Notes
    :glob:
 
    process/*
+
+Keyword Detection Notes
+=======================
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   kd_integration/*
+

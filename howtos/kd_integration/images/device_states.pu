@@ -1,0 +1,38 @@
+@startuml
+hide empty description
+state "D0 - power on" as D0
+state "D3 - power off " as D3 
+state "D0ix - opportunistic power reduction" as D0ix {
+	  state "FW regular scheduling" as FW_D0 
+		[*] --> FW_D0
+  FW_D0 --> FW_D0ix : Entry conditions meet
+	note right of FW_D0ix
+	Entry criteria: 
+	1. No streaming to host 
+	2. No IPC pending
+	3. Timer expired
+	Exit criteria:
+	1. IPC service pending
+	end note
+  FW_D0ix --> FW_D0 : Exit conditions meet IPCFromHost
+  
+  state "FW use case optimized scheduling" as FW_D0ix {
+	 state "Low Power Sequencer active" as LPS_ON
+	 [*] --> LPS_ON
+  }
+}
+
+[*] --> D0: Init
+D0 --> D3 : SOF_IPC_PM_CTX_SAVE\n(pm_prepare_D3=1)
+D3 -> D0 : SOF_IPC_PM_CTX_RESUME\n(empty implementation today)
+D0 --> D0ix : SOF_IPC_PM_STATE_ENABLE\n(transition = D0_to_D0ix)
+D0ix --> D0 : SOF_IPC_PM_STATE_ENABLE\n(transition = D0ix_to_D0)
+note right of D0ix
+  driver needs to provide via IPC 
+  1: information if FW can opportinistically power gate DSP to 
+	transition between D0/D0ix 
+	2: optionally (for future use) if streaming to/from host is 
+	active at the time of transition
+end note
+
+@enduml

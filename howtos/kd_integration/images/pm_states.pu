@@ -1,0 +1,35 @@
+@startuml
+hide empty description
+state "D3 - power off " as D3 
+state "D0ix - active" as D0ix {
+	D0ix : FW oportunisically selects optimal power optimization
+		state "D0i0 - FW regular scheduling" as FW_D0 
+		[*] --> FW_D0
+	FW_D0 --> FW_D0ix : Entry conditions meet
+	note right of FW_D0ix
+	Entry criteria: 
+	1. Flags prevent_*_gating not set in IPC
+	2. No streaming to host (for KD use case)
+	3. No IPC service pending
+	4. Timer expired to avoid storm of internal state changes
+	Exit criteria:
+	1. IPC service pending
+	end note
+	FW_D0ix --> FW_D0 : Exit conditions meet\n(IPC service required)
+	state "D0i3 - FW use case optimized scheduling" as FW_D0ix {
+	FW_D0ix : Low Power Sequencer enabled
+	}
+}
+
+[*] --> D0ix: Init
+D0ix --> D3 : today: SOF_IPC_PM_CTX_SAVE(pm_prepare_D3=1) \n proposal: SOF_IPC_PM_STATE_SET(D3)
+D3 -> D0ix : today: SOF_IPC_PM_CTX_RESUME(empty implementation today) \n proposal: SOF_IPC_PM_STATE_SET(D0ix)
+note right of D0ix
+  driver needs to provide via IPC 
+  1: information if FW can opportinistically power gate DSP to 
+	transition between D0/D0ix 
+	2: optionally (for future use) if streaming to/from host is 
+	active at the time of transition
+end note
+
+@enduml
